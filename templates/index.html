@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}FitBuddy: your week, mapped out{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Seven days,<br>mapped out.</h1>
+    <p class="lede">Tell us your goal and how hard you want to work. FitBuddy lays out a full week of strength, cardio and recovery, then reshapes it when you say what didn't work.</p>
+
+    <figure class="route-art" aria-label="Example week: strength, cardio and recovery days along a path">
+      <svg viewBox="0 0 620 140" role="img" aria-hidden="true">
+        <path class="route-line" d="M40 60 C85 60 85 30 130 30 C175 30 175 65 220 65 C265 65 265 25 310 25 C355 25 355 60 400 60 C445 60 445 30 490 30 C535 30 535 68 580 68" pathLength="1"/>
+        <g class="stop k-train"><circle cx="40" cy="60" r="20"/><text x="40" y="66">M</text><text class="cap" x="40" y="107">Full body</text></g>
+        <g class="stop k-cardio"><circle cx="130" cy="30" r="20"/><text x="130" y="36">T</text><text class="cap" x="130" y="77">Easy cardio</text></g>
+        <g class="stop k-train"><circle cx="220" cy="65" r="20"/><text x="220" y="71">W</text><text class="cap" x="220" y="112">Legs</text></g>
+        <g class="stop k-recovery"><circle cx="310" cy="25" r="20"/><text x="310" y="31">T</text><text class="cap" x="310" y="72">Recovery</text></g>
+        <g class="stop k-cardio"><circle cx="400" cy="60" r="20"/><text x="400" y="66">F</text><text class="cap" x="400" y="107">Intervals</text></g>
+        <g class="stop k-train"><circle cx="490" cy="30" r="20"/><text x="490" y="36">S</text><text class="cap" x="490" y="77">Upper body</text></g>
+        <g class="stop k-rest"><circle cx="580" cy="68" r="20"/><text x="580" y="74">S</text><text class="cap" x="580" y="115">Rest</text></g>
+      </svg>
+      <figcaption class="legend">
+        <span><i class="dot k-train"></i>Strength</span>
+        <span><i class="dot k-cardio"></i>Cardio</span>
+        <span><i class="dot k-recovery"></i>Recovery</span>
+        <span><i class="dot k-rest"></i>Rest</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <form class="panel builder" method="post" action="/generate" novalidate data-busy-text="Building your week…">
+    <h2>Build your week</h2>
+    <p class="hint">
+      {% if ai_on %}Gemini is connected, so your plan is written for you.
+      {% else %}Runs on the built-in planner. Add a Gemini key any time for AI-written plans.{% endif %}
+    </p>
+
+    <div class="field {% if errors.name %}has-error{% endif %}">
+      <label for="name">Your name</label>
+      <input id="name" name="name" type="text" autocomplete="name" required value="{{ values.name or '' }}" placeholder="Sakthi">
+      {% if errors.name %}<p class="error">{{ errors.name }}</p>{% endif %}
+    </div>
+
+    <div class="field {% if errors.handle %}has-error{% endif %}">
+      <label for="handle">Username</label>
+      <input id="handle" name="handle" type="text" autocomplete="username" required value="{{ values.handle or '' }}" placeholder="sakthi_01">
+      <p class="hint">Your plan lives at this name. Using it again replaces the old plan.</p>
+      {% if errors.handle %}<p class="error">{{ errors.handle }}</p>{% endif %}
+    </div>
+
+    <div class="row">
+      <div class="field {% if errors.age %}has-error{% endif %}">
+        <label for="age">Age</label>
+        <input id="age" name="age" type="number" inputmode="numeric" min="14" max="90" required value="{{ values.age or '' }}" placeholder="28">
+        {% if errors.age %}<p class="error">{{ errors.age }}</p>{% endif %}
+      </div>
+      <div class="field {% if errors.weight %}has-error{% endif %}">
+        <label for="weight">Weight (kg)</label>
+        <input id="weight" name="weight" type="number" inputmode="decimal" step="0.1" min="25" max="300" required value="{{ values.weight or '' }}" placeholder="70">
+        {% if errors.weight %}<p class="error">{{ errors.weight }}</p>{% endif %}
+      </div>
+    </div>
+
+    <fieldset class="field {% if errors.goal %}has-error{% endif %}">
+      <legend>Main goal</legend>
+      <div class="chips">
+        {% for g in goals %}
+        <label class="chip">
+          <input type="radio" name="goal" value="{{ g }}" {% if values.goal == g or (not values.goal and loop.first) %}checked{% endif %}>
+          <span>{{ g }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if errors.goal %}<p class="error">{{ errors.goal }}</p>{% endif %}
+    </fieldset>
+
+    <fieldset class="field {% if errors.intensity %}has-error{% endif %}">
+      <legend>How hard?</legend>
+      <div class="segmented">
+        {% set hints = {'Low': '30 min sessions', 'Medium': '45 min sessions', 'High': '60 min sessions'} %}
+        {% for lv in intensities %}
+        <label>
+          <input type="radio" name="intensity" value="{{ lv }}" {% if values.intensity == lv or (not values.intensity and lv == 'Medium') %}checked{% endif %}>
+          <span><strong>{{ lv }}</strong><small>{{ hints[lv] }}</small></span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if errors.intensity %}<p class="error">{{ errors.intensity }}</p>{% endif %}
+    </fieldset>
+
+    <button class="btn primary" type="submit">Build my week</button>
+  </form>
+</section>
+{% endblock %}

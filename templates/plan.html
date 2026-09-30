@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ member.name }}'s week · FitBuddy{% endblock %}
+{% block content %}
+{% set hrs = total_minutes // 60 %}{% set mins = total_minutes % 60 %}
+<section class="plan-head">
+  <div>
+    <h1>{{ member.name }}’s week</h1>
+    <p class="summary">{{ active_days }} active days and {% if hrs %}{{ hrs }} h {% endif %}{{ mins }} min of movement, tuned for {{ member.goal|lower }}.</p>
+    <p class="tags">
+      <span class="tag">{{ member.goal }}</span>
+      <span class="tag">{{ member.intensity }} intensity</span>
+      <span class="tag soft">{{ source_label }}</span>
+    </p>
+  </div>
+  {% if has_update %}
+  <div class="version" role="group" aria-label="Plan version">
+    <a href="?version=original" {% if version == 'original' %}aria-current="true"{% endif %}>Original</a>
+    <a href="?version=updated" {% if version == 'updated' %}aria-current="true"{% endif %}>Updated</a>
+  </div>
+  {% endif %}
+</section>
+
+<section class="route" role="tablist" aria-label="Days of the week" data-route>
+  {% for d in days %}
+  <button class="node k-{{ d.kind }}" role="tab" type="button" id="tab-{{ loop.index0 }}" aria-controls="day-{{ loop.index0 }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-day="{{ loop.index0 }}">
+    <span class="bubble">{{ d.day[0] }}</span>
+    <span class="node-day">{{ d.day }}<em class="today-mark" hidden>today</em></span>
+    <span class="node-focus">{{ d.focus }}</span>
+    <span class="node-min">{% if d.minutes %}{{ d.minutes }} min{% else %}Off{% endif %}</span>
+  </button>
+  {% endfor %}
+</section>
+
+<div class="plan-body">
+  <div class="days">
+    {% for d in days %}
+    {% set i = loop.index0 %}
+    <article class="day k-{{ d.kind }}" id="day-{{ i }}" role="tabpanel" aria-labelledby="tab-{{ i }}" data-panel="{{ i }}">
+      <header class="day-head">
+        <div>
+          <h2>{{ FULL_DAYS[i] }}</h2>
+          <p class="day-focus">{{ d.focus }}</p>
+        </div>
+        <p class="day-meta"><span class="pill">{{ KIND_LABEL[d.kind] }}</span>{% if d.minutes %}<span class="mins">{{ d.minutes }} min</span>{% endif %}</p>
+      </header>
+
+      {% if d.kind == 'rest' and not d.main %}
+        <p class="rest-note">Nothing scheduled. Rest is where the training sinks in.</p>
+      {% else %}
+      <ol class="phases">
+        {% if d.warmup %}
+        <li class="phase">
+          <h3>Warm-up</h3>
+          <ul>{% for w in d.warmup %}<li>{{ w }}</li>{% endfor %}</ul>
+        </li>
+        {% endif %}
+        {% if d.main %}
+        <li class="phase main">
+          <h3>{{ 'Optional' if d.kind == 'rest' else 'Main set' }}</h3>
+          <ul class="sets">
+            {% for m in d.main %}<li><span class="ex">{{ m.name }}</span>{% if m.dose %}<span class="dose">{{ m.dose }}</span>{% endif %}</li>{% endfor %}
+          </ul>
+        </li>
+        {% endif %}
+        {% if d.cooldown %}
+        <li class="phase">
+          <h3>Cool-down</h3>
+          <ul>{% for c in d.cooldown %}<li>{{ c }}</li>{% endfor %}</ul>
+        </li>
+        {% endif %}
+      </ol>
+      {% endif %}
+
+      <p class="recovery-line"><strong>Recovery.</strong> {{ d.recovery }}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <aside class="side">
+    <section class="panel tip">
+      <h2>Fuel and recovery</h2>
+      <p>{{ plan.nutrition_tip }}</p>
+    </section>
+
+    {% if changes %}
+    <section class="panel changes">
+      <h2>What changed</h2>
+      <ul>{% for c in changes %}<li>{{ c }}</li>{% endfor %}</ul>
+      <p class="hint">Your original plan is kept. Switch to “Original” above to compare.</p>
+    </section>
+    {% endif %}
+
+    <form class="panel feedback" method="post" action="/plan/{{ member.handle }}/feedback" data-busy-text="Reworking your week…">
+      <h2>Not quite right?</h2>
+      <p class="hint">Say what to change and the week is reshaped. Each round starts again from your original plan.</p>
+      <label class="sr" for="feedback">Your feedback</label>
+      <textarea id="feedback" name="feedback" rows="4" maxlength="600" required placeholder="e.g. Add more cardio and one extra rest day">{{ plan.feedback or '' }}</textarea>
+      <div class="chips quick" aria-label="Quick suggestions">
+        <button type="button" class="chip-btn" data-fill="Add more cardio">More cardio</button>
+        <button type="button" class="chip-btn" data-fill="Add one extra rest day">Extra rest day</button>
+        <button type="button" class="chip-btn" data-fill="Make sessions shorter">Shorter sessions</button>
+        <button type="button" class="chip-btn" data-fill="Add more core work">More core</button>
+        <button type="button" class="chip-btn" data-fill="Make it easier">Easier</button>
+        <button type="button" class="chip-btn" data-fill="Make it harder">Harder</button>
+      </div>
+      <button class="btn primary" type="submit">Update my plan</button>
+    </form>
+
+    <p class="side-links"><a href="/">Build a different plan</a></p>
+  </aside>
+</div>
+{% endblock %}

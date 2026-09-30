@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Coach view · FitBuddy{% endblock %}
+{% block content %}
+<section class="plan-head">
+  <div>
+    <h1>Coach view</h1>
+    <p class="summary">
+      {% if rows %}{{ rows|length }} member{{ '' if rows|length == 1 else 's' }}, {{ revised_count }} with a revised plan.{% else %}Everyone you coach shows up here.{% endif %}
+    </p>
+  </div>
+</section>
+
+{% if not rows %}
+<section class="panel empty">
+  <h2>No members yet</h2>
+  <p>Build the first plan and it will appear here, ready to review.</p>
+  <a class="btn primary" href="/">Build a plan</a>
+</section>
+{% else %}
+<section class="members">
+  {% for r in rows %}
+  {% set m = r.member %}
+  <details class="member">
+    <summary>
+      <span class="avatar">{{ m.name[:1]|upper }}</span>
+      <span class="who"><strong>{{ m.name }}</strong><small>@{{ m.handle }}</small></span>
+      <span class="goal">{{ m.goal }}</span>
+      <span class="level">{{ m.intensity }}</span>
+      <span class="joined">{{ m.created_at|date }}</span>
+      <span class="status {{ 'revised' if r.revised else '' }}">{{ 'Revised' if r.revised else 'Original' }}</span>
+    </summary>
+    <div class="member-body">
+      <ol class="mini-week" aria-label="Week overview">
+        {% for d in r.days %}
+        <li class="mini k-{{ d.kind }}"><b>{{ d.day }}</b><span>{{ d.focus }}</span><small>{% if d.minutes %}{{ d.minutes }} min{% else %}Off{% endif %}</small></li>
+        {% endfor %}
+      </ol>
+      <dl class="facts">
+        <div><dt>Age and weight</dt><dd>{{ m.age }} years, {{ '%g'|format(m.weight) }} kg</dd></div>
+        <div><dt>Fuel tip</dt><dd>{{ r.plan.nutrition_tip }}</dd></div>
+        {% if r.plan.feedback %}<div><dt>Latest feedback</dt><dd>“{{ r.plan.feedback }}”</dd></div>{% endif %}
+        {% if r.plan.updated_at %}<div><dt>Revised on</dt><dd>{{ r.plan.updated_at|date }}</dd></div>{% endif %}
+      </dl>
+      <div class="member-actions">
+        <a class="btn" href="/plan/{{ m.handle }}">Open plan</a>
+        <form method="post" action="/coach/{{ m.handle }}/delete" data-confirm="Delete {{ m.name }} and their plans? This can't be undone.">
+          <button class="btn danger" type="submit">Delete member</button>
+        </form>
+      </div>
+    </div>
+  </details>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
